@@ -186,9 +186,9 @@
       setSyncBadge('online', '已同步');
       setSyncPanel('online', '云端已连接', '刚刚同步');
       toast('云端同步完成', 'ok');
-      // 触发当前页面重新渲染（不复用 location.reload 避免死循环）
+      // 触发当前页面重新渲染
       try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
-      Router.navigate(Router.current || 'home');
+      Router.dispatch();
     } else {
       setSyncBadge('error', '同步失败');
       setSyncPanel('error', '同步失败', (r.push.error || r.pull.error || '未知错误'));

@@ -103,5 +103,5 @@
     dispatch();
   }
 
-  global.Router = { go, init, get current() { return currentRoute; } };
+  global.Router = { go, init, dispatch, get current() { return currentRoute; } };
 })(window);
