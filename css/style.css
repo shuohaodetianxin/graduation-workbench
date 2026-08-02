@@ -1147,14 +1147,16 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .li-thumb-img:hover { opacity: 0.85; }
 
 /* 批量删除 */
-.batch-cb { width: 20px; height: 20px; margin-right: 8px; flex-shrink: 0; accent-color: var(--danger); }
+.batch-cb { width: 20px; height: 20px; margin-right: 8px; flex-shrink: 0; accent-color: var(--danger); cursor: pointer; }
 .batch-bar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 16px; background: #fff3f3;
-  border: 1px solid var(--danger); border-radius: var(--r-md);
-  margin-top: 10px; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 14px; background: #fff5f5;
+  border: 1px solid var(--line-soft); border-radius: var(--r-md);
+  margin-top: 10px; font-size: 13px;
+  position: sticky; bottom: 0; z-index: 10;
 }
-.batch-bar .btn { margin-left: auto; }
+.batch-bar .batch-count { font-weight: 600; min-width: 80px; color: #666; }
+.batch-bar .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Markdown 预览样式 */
 .md-preview {

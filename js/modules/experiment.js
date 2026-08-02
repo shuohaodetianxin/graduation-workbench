@@ -135,27 +135,43 @@
 
     function addBatchFooter() {
       if (!_batchMode) return;
-      if (_batchSelected.size === 0) {
-        listWrap.appendChild(h('div', { class: 'batch-bar', style: 'background:#f0f4f8;border-color:#aaa;color:#666' },
-          '👆 点击记录勾选（再点取消），选好后点下方删除'));
-        return;
+      // 获取当前显示的记录列表
+      const kw = ($('#expSearch').value || '').trim().toLowerCase();
+      let visibleRecords = [];
+      if (kw) {
+        visibleRecords = Storage.getRecords(route).filter(r => JSON.stringify(r).toLowerCase().includes(kw));
+      } else {
+        visibleRecords = Storage.getRecords(route).filter(r => r.date === selectedDate);
       }
+      const allIds = visibleRecords.map(r => r.id);
+
       const bar = h('div', { class: 'batch-bar' }, [
-        h('span', null, '已选 ' + _batchSelected.size + ' 条'),
-        h('button', { class: 'btn btn-danger', onclick: async () => {
-          if (!await confirmDialog('确认删除这 ' + _batchSelected.size + ' 条记录吗？此操作不可撤销。')) return;
-          const ids = [..._batchSelected];
-          for (const id of ids) {
-            await Storage.deleteRecord(route, id);
-          }
-          _batchSelected.clear();
-          _batchMode = false;
-          batchBtn.textContent = '🗑️ 批量删除';
-          batchBtn.className = 'btn btn-ghost btn-sm';
-          cal.refresh(Storage.getDateIndexByRoute(route));
+        h('span', { class: 'batch-count' },
+          _batchSelected.size > 0 ? ('已选 ' + _batchSelected.size + ' / ' + allIds.length + ' 条')
+          : ('共 ' + allIds.length + ' 条，点击勾选')
+        ),
+        h('button', { class: 'btn btn-ghost btn-sm', onclick: () => {
+          allIds.forEach(id => _batchSelected.add(id));
           _refreshFn();
-          toast('已删除 ' + ids.length + ' 条', 'ok');
-        }}, '确认删除'),
+        }}, '全选'),
+        h('button', { class: 'btn btn-ghost btn-sm', onclick: () => {
+          _batchSelected.clear();
+          _refreshFn();
+        }}, '取消全选'),
+        h('button', { class: 'btn btn-danger btn-sm', disabled: _batchSelected.size === 0 ? 'disabled' : null,
+          onclick: _batchSelected.size === 0 ? null : (async () => {
+            if (!await confirmDialog('确认删除 ' + _batchSelected.size + ' 条记录吗？\n此操作不可撤销，图片也将一并删除。')) return;
+            const ids = [..._batchSelected];
+            for (const id of ids) { await Storage.deleteRecord(route, id); }
+            _batchSelected.clear();
+            _batchMode = false;
+            batchBtn.textContent = '🗑️ 批量删除';
+            batchBtn.className = 'btn btn-ghost btn-sm';
+            cal.refresh(Storage.getDateIndexByRoute(route));
+            _refreshFn();
+            toast('已删除 ' + ids.length + ' 条', 'ok');
+          })
+        }, '🗑️ 确认删除'),
       ]);
       listWrap.appendChild(bar);
     }
