@@ -185,9 +185,12 @@
     if (r.push.ok && r.pull.ok) {
       const ts = new Date().toISOString();
       localStorage.setItem(SYNC_TIME_KEY, ts);
-      // 统计推送了多少条，以及全部模块总记录数
-      let pushCount = 0;
-      if (r.push.results) Object.values(r.push.results).forEach(v => { if (v.n) pushCount += v.n; });
+      // 统计推送结果 + 显示失败原因
+      let pushCount = 0, pushErrors = [];
+      if (r.push.results) Object.values(r.push.results).forEach(v => { 
+        if (v.n) pushCount += v.n; 
+        else if (v.error) pushErrors.push(v.error.substring(0,60));
+      });
       let totalAll = 0;
       const mods = [];
       for (const k in Storage.state.records) {
@@ -197,7 +200,9 @@
       }
       setSyncBadge('online', '已同步');
       setSyncPanel('online', '云端已连接', '刚刚同步');
-      if (mods.length) {
+      if (pushErrors.length) {
+        toast('推送错误: ' + pushErrors[0], 'err');
+      } else if (mods.length) {
         toast('推送' + pushCount + '条 总计' + totalAll + '条 (' + mods.join(',') + ')', 'ok');
       } else if (r.push._found && r.push._found.length) {
         toast('找到记录但未推送: ' + r.push._found.join(','), 'err');
