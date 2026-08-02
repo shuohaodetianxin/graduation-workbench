@@ -83,10 +83,9 @@
     });
 
     _refreshFn = refreshList;
-    _refreshBatchFn = refreshBatchFooter;
     refreshList();
 
-    // 批量删除——只刷新底部工具栏，不重建列表避免视觉闪烁
+    // 批量删除——只刷新底部工具栏
     function refreshBatchFooter() {
       clear(batchBarWrap);
       if (!_batchMode) return;
@@ -97,9 +96,9 @@
       } else {
         visibleRecords = Storage.getRecords(route).filter(r => r.date === selectedDate);
       }
-      // 保存当前可见记录列表
-      _visibleRecords = visibleRecords;
       const totalN = visibleRecords.length;
+      // 为没有id的记录生成临时id
+      visibleRecords.forEach(r => { if (!r.id) r.id = '_r_' + Math.random().toString(36).slice(2,10); });
 
       const bar = h('div', { class: 'batch-bar' }, [
         h('span', { class: 'batch-count' },
@@ -107,9 +106,9 @@
           : ('共 ' + totalN + ' 条，点击复选框选择')
         ),
         h('button', { class: 'btn btn-ghost btn-sm', onclick: () => {
-          for (let i = 0; i < totalN; i++) _batchSelected.add(i);
+          visibleRecords.forEach(r => _batchSelected.add(r.id));
           refreshBatchFooter();
-          document.querySelectorAll('.batch-cb').forEach((cb, i) => { cb.checked = true; });
+          document.querySelectorAll('.batch-cb').forEach(cb => { cb.checked = true; });
         }}, '全选'),
         h('button', { class: 'btn btn-ghost btn-sm', onclick: () => {
           _batchSelected.clear();
@@ -118,20 +117,16 @@
         }}, '取消全选'),
         h('button', { class: 'btn btn-danger btn-sm', disabled: _batchSelected.size === 0 ? 'disabled' : null,
           onclick: _batchSelected.size === 0 ? null : (async () => {
-            if (!await confirmDialog('确认删除 ' + _batchSelected.size + ' 条记录吗？\n此操作不可撤销，图片也将一并删除。')) return;
-            // 按索引从大到小删除，避免索引偏移
-            const indices = [..._batchSelected].sort((a,b) => b-a);
-            for (const idx of indices) {
-              const rec = _visibleRecords[idx];
-              if (rec && rec.id) await Storage.deleteRecord(route, rec.id);
-            }
+            const selIds = [..._batchSelected];
+            if (!await confirmDialog('确认删除 ' + selIds.length + ' 条记录吗？\n此操作不可撤销，图片也将一并删除。')) return;
+            for (const id of selIds) { await Storage.deleteRecord(route, id); }
             _batchSelected.clear();
             _batchMode = false;
             batchBtn.textContent = '🗑️ 批量删除';
             batchBtn.className = 'btn btn-ghost btn-sm';
             cal.refresh(Storage.getDateIndexByRoute(route));
             _refreshFn();
-            toast('已删除 ' + indices.length + ' 条', 'ok');
+            toast('已删除 ' + selIds.length + ' 条', 'ok');
           })
         }, '🗑️ 确认删除'),
       ]);
@@ -155,10 +150,10 @@
             '没有匹配的记录'));
         } else {
           const list = h('div', { class: 'list' });
-          records.forEach((r, i) => list.appendChild(buildItem(r, cfg, () => {
+          records.forEach(r => list.appendChild(buildItem(r, cfg, () => {
             cal.refresh(Storage.getDateIndexByRoute(route));
             refreshList();
-          }, i)));
+          })));
           listWrap.appendChild(list);
         }
         refreshBatchFooter();
@@ -181,10 +176,10 @@
         ));
       } else {
         const list = h('div', { class: 'list' });
-        filtered.forEach((r, i) => list.appendChild(buildItem(r, cfg, () => {
+        filtered.forEach(r => list.appendChild(buildItem(r, cfg, () => {
           cal.refresh(Storage.getDateIndexByRoute(route));
           refreshList();
-        }, i)));
+        })));
         listWrap.appendChild(list);
       }
       refreshBatchFooter();
@@ -200,19 +195,20 @@
     }
   }
 
-  function buildItem(r, cfg, onChange, idx) {
+  function buildItem(r, cfg, onChange) {
     const title = r.title || r.idea || r.name || r.summary || '未命名';
     const imgs = (r.files || []).filter(f => f.type && f.type.startsWith('image/'));
     const thumbs = imgs.length ? h('div', { class: 'li-thumbs' },
       imgs.slice(0, 3).map(f => h('img', { src: f.dataUrl, class: 'li-thumb-img', onclick: (e) => { e.stopPropagation(); viewImage(f.dataUrl); } }))
     ) : null;
-    // 批量模式下的复选框（用索引唯一标识）
+    // 批量模式下的复选框（保证每条记录有id）
+    if (!r.id) r.id = '_r_' + Math.random().toString(36).slice(2,10);
     const cb = _batchMode ? (() => {
       const c = h('input', { type: 'checkbox', class: 'batch-cb' });
-      c.checked = _batchSelected.has(idx);
+      c.checked = _batchSelected.has(r.id);
       c.addEventListener('change', (e) => {
-        if (e.target.checked) _batchSelected.add(idx); else _batchSelected.delete(idx);
-        if (_refreshBatchFn) _refreshBatchFn();
+        if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
+        if (typeof refreshBatchFooter === 'function') refreshBatchFooter();
       });
       return c;
     })() : null;
@@ -347,8 +343,7 @@
     return _currentRoute || 'exp-tinball-color';
   }
   let _currentRoute = null;
-  let _batchMode = false, _batchSelected = new Set(), _refreshFn = null, _refreshBatchFn = null;
-  let _visibleRecords = [];  // 当前可见的记录列表
+  let _batchMode = false, _batchSelected = new Set(), _refreshFn = null;
 
   // ===== 原料标签档案 =====
   function openMaterialEditor(record, cfg, onChange) {
