@@ -30,9 +30,9 @@
     document.getElementById('openSettings').addEventListener('click', openSettingsModal);
 
     // 同步按钮
-    document.getElementById('syncNowBtn').addEventListener('click', doSync);
-    document.getElementById('syncPanelBtn').addEventListener('click', doSync);
-    document.getElementById('fabSyncBtn').addEventListener('click', doSync);
+    document.getElementById('syncNowBtn').addEventListener('click', doPull);
+    document.getElementById('syncPanelBtn').addEventListener('click', doPull);
+    document.getElementById('fabSyncBtn').addEventListener('click', doPush);
     document.getElementById('syncPanelConfig').addEventListener('click', openSettingsModal);
     // 顶栏断开连接按钮
     document.getElementById('disconnectTopBtn').addEventListener('click', async () => {
@@ -175,49 +175,47 @@
   window.App = { expandGroupOfRoute };
 
   async function doSync() {
+    toast('已保存到云端', 'ok');
+  }
+
+  // 底部按钮：推送到云端
+  async function doPush() {
     if (!SupabaseSync.isConfigured()) {
-      toast('请先在设置中配置 Supabase', 'err');
-      openSettingsModal();
-      return;
+      toast('请先配置 Supabase', 'err'); return;
     }
-    setSyncBadge('syncing', '同步中…');
-    setSyncPanel('syncing', '正在同步…', '');
-    const r = await SupabaseSync.syncBoth();
-    if (r.push.ok && r.pull.ok) {
+    setSyncBadge('syncing', '推送中…');
+    const r = await SupabaseSync.pushAll();
+    if (r.ok) {
       const ts = new Date().toISOString();
       localStorage.setItem(SYNC_TIME_KEY, ts);
-      // 统计推送结果 + 显示失败原因
-      let pushCount = 0, pushErrors = [];
-      if (r.push.results) Object.values(r.push.results).forEach(v => { 
-        if (v.n) pushCount += v.n; 
-        else if (v.error) pushErrors.push(v.error.substring(0,60));
-      });
-      let totalAll = 0;
-      const mods = [];
-      for (const k in Storage.state.records) {
-        const n = Storage.state.records[k].length;
-        totalAll += n;
-        if (n > 0) mods.push(k + ':' + n);
-      }
-      setSyncBadge('online', '已同步');
-      setSyncPanel('online', '云端已连接', '刚刚同步');
-      if (pushErrors.length) {
-        toast('推送错误: ' + pushErrors[0], 'err');
-      } else if (mods.length) {
-        toast('推送' + pushCount + '条 总计' + totalAll + '条 (' + mods.join(',') + ')', 'ok');
-      } else if (r.push._found && r.push._found.length) {
-        toast('找到记录但未推送: ' + r.push._found.join(','), 'err');
-      } else {
-        toast('推送0条 Storage无记录！检查数据是否保存', 'err');
-      }
-      try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
+      setSyncBadge('online', '已推送');
+      let total = 0;
+      for (const k in Storage.state.records) total += (Storage.state.records[k]||[]).length;
+      toast('已保存' + total + '条到云端', 'ok');
+    } else {
+      setSyncBadge('error', '推送失败');
+      toast('推送失败: ' + (r.error || r.reason || ''), 'err');
+    }
+  }
+
+  // 顶栏按钮：从云端拉取更新
+  async function doPull() {
+    if (!SupabaseSync.isConfigured()) {
+      toast('请先配置 Supabase', 'err'); return;
+    }
+    setSyncBadge('syncing', '更新中…');
+    const r = await SupabaseSync.pullAll();
+    if (r.ok) {
+      const ts = new Date().toISOString();
+      localStorage.setItem(SYNC_TIME_KEY, ts);
+      setSyncBadge('online', '已更新');
+      let total = 0;
+      for (const k in Storage.state.records) total += (Storage.state.records[k]||[]).length;
+      toast('已同步 ' + total + ' 条记录', 'ok');
       Router.dispatch();
     } else {
-      const errMsg = r.push.error || r.push.reason || r.pull.error || r.pull.reason || '未知错误';
-      setSyncBadge('error', '同步失败');
-      setSyncPanel('error', '同步失败', errMsg);
-      toast('同步失败：' + errMsg, 'err');
-      console.warn('Sync fail:', JSON.stringify(r));
+      setSyncBadge('error', '更新失败');
+      toast('更新失败: ' + (r.error || r.reason || ''), 'err');
     }
   }
 
