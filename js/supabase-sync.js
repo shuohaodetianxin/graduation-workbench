@@ -92,22 +92,24 @@
             data: JSON.parse(JSON.stringify(r)),  // 清洗：去undefined和非法值
             updated_at: r.updatedAt || new Date().toISOString() 
           }));
-          const res = await fetch(this._restUrl() + '/' + table + '?on_conflict=id', {
+          const res = await fetch(this._restUrl() + '/' + table, {
             method: 'POST',
             headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
             body: JSON.stringify(rows),
           });
           results[key] = res.ok ? { ok: true, n: rows.length } 
             : { ok: false, error: 'HTTP' + res.status + ' ' + (await res.text()).substring(0,200) };
+          // 任何一条失败都标记整体失败
+          if (!res.ok) results._anyError = true;
         }
         // tags
         const tagsRow = { id: 'tags', data: Storage.state.tags, updated_at: new Date().toISOString() };
-        await fetch(this._restUrl() + '/tags?on_conflict=id', {
+        await fetch(this._restUrl() + '/tags', {
           method: 'POST',
           headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
           body: JSON.stringify(tagsRow),
         });
-        return { ok: true, results, _found: foundKeys };
+        return { ok: !results._anyError, results, _found: foundKeys };
       } catch (e) {
         return { ok: false, error: e.message };
       } finally {
