@@ -89,7 +89,7 @@
           if (!arr.length) continue;
           const rows = arr.map(r => ({ 
             id: r.id || 'unknown', 
-            data: r, 
+            data: JSON.parse(JSON.stringify(r)),  // 清洗：去undefined和非法值
             updated_at: r.updatedAt || new Date().toISOString() 
           }));
           const res = await fetch(this._restUrl() + '/' + table, {
