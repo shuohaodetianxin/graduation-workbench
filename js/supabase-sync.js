@@ -147,7 +147,8 @@
           if (!table) continue;
           const { data, error } = await this.client.from(table).select('*');
           if (error) { console.warn('pull', key, error); continue; }
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && data.length > 0) {
+            // 云端有数据才覆盖本地；为空时保留本地记录，防止误清空
             Storage.state.records[key] = data.map(r => r.data || r);
           }
         }
@@ -165,6 +166,8 @@
 
     async syncBoth() {
       const push = await this.pushAll();
+      // push 失败时不拉取，避免用空数据覆盖本地记录
+      if (!push.ok) return { push, pull: { ok: false, reason: 'push-failed' } };
       const pull = await this.pullAll();
       return { push, pull };
     }
