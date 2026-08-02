@@ -177,10 +177,15 @@
       imgs.slice(0, 3).map(f => h('img', { src: f.dataUrl, class: 'li-thumb-img', onclick: (e) => { e.stopPropagation(); viewImage(f.dataUrl); } }))
     ) : null;
     // 批量模式下的复选框
-    const cb = _batchMode ? h('input', { type: 'checkbox', class: 'batch-cb', checked: _batchSelected.has(r.id), onchange: (e) => {
-      if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
-      _refreshFn();
-    }}) : null;
+    const cb = _batchMode ? (() => {
+      const c = h('input', { type: 'checkbox', class: 'batch-cb' });
+      c.checked = _batchSelected.has(r.id);
+      c.addEventListener('change', (e) => {
+        if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
+        _refreshFn();
+      });
+      return c;
+    })() : null;
     const item = h('div', { class: 'list-item' }, [
       cb,
       h('span', { class: 'li-emoji' }, cfg.title.includes('锡球') ? '⚪' : (cfg.title.includes('锡膏') ? '🟡' : '🏷️')),
