@@ -43,9 +43,13 @@
       toast('已断开云端连接', 'ok');
     });
 
-    // PWA：Service Worker
+    // PWA：Service Worker — 先清掉所有旧 SW 再注册新版
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      }).finally(() => {
+        navigator.serviceWorker.register('./sw.js?v=18').catch(() => {});
+      });
     }
 
     // 侧边栏分组折叠/展开（状态持久化到 localStorage）
@@ -182,8 +186,9 @@
       setSyncBadge('online', '已同步');
       setSyncPanel('online', '云端已连接', '刚刚同步');
       toast('云端同步完成', 'ok');
-      // 重新渲染当前页
-      setTimeout(() => location.reload(), 600);
+      // 触发当前页面重新渲染（不复用 location.reload 避免死循环）
+      try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
+      Router.navigate(Router.current || 'home');
     } else {
       setSyncBadge('error', '同步失败');
       setSyncPanel('error', '同步失败', (r.push.error || r.pull.error || '未知错误'));
