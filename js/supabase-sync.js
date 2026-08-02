@@ -87,7 +87,11 @@
           const arr = Storage.state.records[key] || [];
           if (arr.length) foundKeys.push(key + '=' + arr.length);
           if (!arr.length) continue;
-          const rows = arr.map(r => ({ id: r.id, data: r, updated_at: r.updatedAt }));
+          const rows = arr.map(r => ({ 
+            id: r.id || 'unknown', 
+            data: r, 
+            updated_at: r.updatedAt || new Date().toISOString() 
+          }));
           const res = await fetch(this._restUrl() + '/' + table, {
             method: 'POST',
             headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
