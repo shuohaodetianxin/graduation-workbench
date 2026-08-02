@@ -91,7 +91,7 @@
           let nOk = 0, lastErr = null;
           for (const r of arr) {
             const row = { 
-              id: r.id || 'unknown', 
+              id: r.id || ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)), 
               data: JSON.parse(JSON.stringify(r)),
               updated_at: r.updatedAt || new Date().toISOString() 
             };
