@@ -33,6 +33,15 @@
     document.getElementById('syncNowBtn').addEventListener('click', doSync);
     document.getElementById('syncPanelBtn').addEventListener('click', doSync);
     document.getElementById('syncPanelConfig').addEventListener('click', openSettingsModal);
+    // 顶栏断开连接按钮
+    document.getElementById('disconnectTopBtn').addEventListener('click', async () => {
+      if (!SupabaseSync.isConfigured()) { toast('未配置 Supabase', 'err'); return; }
+      const ok = await confirmDialog('确定要断开 Supabase 连接吗？\n本机数据不会被删除，但将停止云端同步。');
+      if (!ok) return;
+      SupabaseSync.disconnect();
+      initConnectionStatus();
+      toast('已断开云端连接', 'ok');
+    });
 
     // PWA：Service Worker
     if ('serviceWorker' in navigator) {
@@ -57,6 +66,9 @@
     const txt = b.querySelector('.sync-text');
     if (txt) txt.textContent = text;
     else b.appendChild(document.createTextNode(text));
+    // 已连接时显示断开按钮
+    const dBtn = document.getElementById('disconnectTopBtn');
+    if (dBtn) dBtn.style.display = (state === 'online') ? '' : 'none';
   }
 
   function setSyncPanel(state, statusText, timeText) {
