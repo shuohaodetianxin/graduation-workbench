@@ -93,14 +93,17 @@
     if (ok) {
       setSyncBadge('online', '已连接');
       setSyncPanel('online', '云端已连接', getLastSyncText());
-      // 自动从云端拉取最新数据（解决其他设备新增/修改后刷新不同步的问题）
-      const pull = await SupabaseSync.pullAll();
-      if (pull.ok) {
-        const ts = new Date().toISOString();
-        localStorage.setItem(SYNC_TIME_KEY, ts);
-        setSyncPanel('online', '云端已连接', '刚刚同步');
-        // 有数据变更则刷新页面以显示最新记录
-        setTimeout(() => location.reload(), 400);
+      // 首次打开时自动从云端拉取最新数据（仅每个标签页执行一次，避免死循环）
+      if (!sessionStorage.getItem('__auto_synced')) {
+        const pull = await SupabaseSync.pullAll();
+        if (pull.ok) {
+          const ts = new Date().toISOString();
+          localStorage.setItem(SYNC_TIME_KEY, ts);
+          sessionStorage.setItem('__auto_synced', '1');
+          setSyncPanel('online', '云端已连接', '刚刚同步');
+          // 有数据变更则刷新页面以显示最新记录
+          setTimeout(() => location.reload(), 400);
+        }
       }
     } else {
       setSyncBadge('error', '连接失败');
