@@ -92,7 +92,7 @@
             data: JSON.parse(JSON.stringify(r)),  // 清洗：去undefined和非法值
             updated_at: r.updatedAt || new Date().toISOString() 
           }));
-          const res = await fetch(this._restUrl() + '/' + table, {
+          const res = await fetch(this._restUrl() + '/' + table + '?on_conflict=id', {
             method: 'POST',
             headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
             body: JSON.stringify(rows),
@@ -102,7 +102,7 @@
         }
         // tags
         const tagsRow = { id: 'tags', data: Storage.state.tags, updated_at: new Date().toISOString() };
-        await fetch(this._restUrl() + '/tags', {
+        await fetch(this._restUrl() + '/tags?on_conflict=id', {
           method: 'POST',
           headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
           body: JSON.stringify(tagsRow),
