@@ -5,7 +5,10 @@
   'use strict';
   const { h, clear, toast, openModal, confirmDialog } = UI;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    // 等待 IndexedDB 加载完成
+    await Storage.init();
+
     // 侧边栏控制
     document.getElementById('openSidebar').addEventListener('click', () => {
       document.getElementById('sidebar').classList.add('open');
@@ -34,6 +37,9 @@
     // 显示存储状态
     updateStorageStatus();
     window.addEventListener('storage-changed', updateStorageStatus);
+    window.addEventListener('storage-error', () => {
+      toast('存储空间不足！请导出备份后清理旧记录', 'err');
+    });
   });
 
   function updateStorageStatus() {
@@ -41,8 +47,15 @@
     for (const k in Storage.state.records) {
       total += (Storage.state.records[k] || []).length;
     }
+    // 估算存储占用（基于内存中的数据大小）
+    let usageKB = 0;
+    try {
+      usageKB = Math.round(JSON.stringify(Storage.state).length / 1024);
+    } catch (_) {}
     const el = document.getElementById('topbarStatus');
-    if (el) el.textContent = total > 0 ? ('📋 ' + total + ' 条记录') : '💾 本地存储';
+    if (el) el.textContent = total > 0 
+      ? ('📋 ' + total + '条 ' + (usageKB > 1000 ? Math.round(usageKB/1000)+'MB' : usageKB+'KB'))
+      : '💾 IndexedDB 存储';
   }
 
   // ====== 侧边栏分组折叠 ======
