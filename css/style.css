@@ -217,6 +217,7 @@ input, textarea, select { font-family: inherit; color: inherit; }
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line-soft);
   position: sticky; top: 0; z-index: 5;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .topbar-title {
   font-family: var(--ff-title);
@@ -1107,10 +1108,10 @@ input, textarea, select { font-family: inherit; color: inherit; }
     box-shadow: var(--sh-3);
   }
   .sidebar.open { transform: translateX(0); }
-  .menu-btn { display: inline-flex; }
+  .menu-btn { display: inline-flex; font-size: 22px; padding: 10px 12px; }
   .close-sidebar { display: inline-flex; }
   .content { padding: 16px 14px 110px; }
-  .topbar { padding: 12px 14px; }
+  .topbar { padding: 14px 14px; padding-top: calc(14px + env(safe-area-inset-top, 0px)); min-height: 56px; }
   .row.cols-2, .row.cols-3, .row.cols-4 { grid-template-columns: 1fr; }
   .bottom-nav { display: flex; }
   .topbar-title { font-size: 16px; }
