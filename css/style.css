@@ -830,6 +830,34 @@ input, textarea, select { font-family: inherit; color: inherit; }
   .cal-affirm-row .affirmation-card { order: 2; }
 }
 
+/* 底部浮动同步按钮 */
+.fab-sync {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #7a9eb1, #5c8a9e);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(122,158,177,0.4);
+  transition: transform .2s, box-shadow .2s;
+  font-family: var(--ff-en);
+}
+.fab-sync:active { transform: translateX(-50%) scale(0.96); }
+.fab-sync-icon { font-size: 20px; }
+@media (max-width: 720px) {
+  .fab-sync { bottom: 100px; padding: 14px 32px; }
+}
+
 /* ====== 弹窗 ====== */
 .modal {
   position: fixed; inset: 0; z-index: 100;

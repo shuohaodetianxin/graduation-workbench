@@ -61,17 +61,10 @@
     }
   }
 
-  function save(state, skipPush) {
+  function save(state) {
     state.version = DATA_VERSION;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
-    if (!skipPush) {
-      try {
-        if (window.SupabaseSync && window.SupabaseSync.pushNow) {
-          window.SupabaseSync.pushNow();
-        }
-      } catch (_) {}
-    }
   }
 
   function mergeDefaults(obj, defaults) {

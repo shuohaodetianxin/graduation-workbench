@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/style.css?v=16" />
+  <link rel="stylesheet" href="./css/style.css?v=17" />
 </head>
 <body>
   <div id="app" class="app">
@@ -112,6 +112,12 @@
         <!-- 各路由页面在这里渲染 -->
       </section>
 
+      <!-- 底部浮动同步按钮 -->
+      <button class="fab-sync" id="fabSyncBtn" title="保存到云端并同步">
+        <span class="fab-sync-icon">☁️</span>
+        <span class="fab-sync-text">保存到云端</span>
+      </button>
+
       <!-- 底部导航（手机端） -->
       <nav class="bottom-nav" aria-label="底部导航">
         <a data-route="home"><span>🏠</span><small>首页</small></a>
@@ -141,16 +147,16 @@
     <!-- Supabase SDK（按需懒加载） -->
   </div>
 
-  <script src="./js/storage.js?v=16"></script>
-  <script src="./js/ui.js?v=16"></script>
-  <script src="./js/calendar.js?v=16"></script>
-  <script src="./js/supabase-sync.js?v=16"></script>
-  <script src="./js/modules/home.js?v=16"></script>
-  <script src="./js/modules/experiment.js?v=16"></script>
-  <script src="./js/modules/patent.js?v=16"></script>
-  <script src="./js/modules/employment.js?v=16"></script>
-  <script src="./js/modules/paper.js?v=16"></script>
-  <script src="./js/router.js?v=16"></script>
-  <script src="./js/app.js?v=16"></script>
+  <script src="./js/storage.js?v=17"></script>
+  <script src="./js/ui.js?v=17"></script>
+  <script src="./js/calendar.js?v=17"></script>
+  <script src="./js/supabase-sync.js?v=17"></script>
+  <script src="./js/modules/home.js?v=17"></script>
+  <script src="./js/modules/experiment.js?v=17"></script>
+  <script src="./js/modules/patent.js?v=17"></script>
+  <script src="./js/modules/employment.js?v=17"></script>
+  <script src="./js/modules/paper.js?v=17"></script>
+  <script src="./js/router.js?v=17"></script>
+  <script src="./js/app.js?v=17"></script>
 </body>
 </html>

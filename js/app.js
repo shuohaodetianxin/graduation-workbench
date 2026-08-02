@@ -32,6 +32,7 @@
     // 同步按钮
     document.getElementById('syncNowBtn').addEventListener('click', doSync);
     document.getElementById('syncPanelBtn').addEventListener('click', doSync);
+    document.getElementById('fabSyncBtn').addEventListener('click', doSync);
     document.getElementById('syncPanelConfig').addEventListener('click', openSettingsModal);
     // 顶栏断开连接按钮
     document.getElementById('disconnectTopBtn').addEventListener('click', async () => {
@@ -111,9 +112,6 @@
     if (ok) {
       setSyncBadge('online', '已连接');
       setSyncPanel('online', '云端已连接', getLastSyncText());
-      // 开启自动拉取（每15秒检查云端新数据）
-      SupabaseSync.onDataChanged = () => { Router.dispatch(); };
-      SupabaseSync.startAutoPull(5000);
     } else {
       setSyncBadge('error', '连接失败');
       setSyncPanel('error', '云端连接失败', '请检查 Supabase 配置');
