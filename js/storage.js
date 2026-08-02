@@ -80,6 +80,10 @@
       for (const k in defaults) {
         out[k] = (k in obj) ? mergeDefaults(obj[k], defaults[k]) : deepClone(defaults[k]);
       }
+      // 保留 obj 中有但 defaults 中没有的键（如 records 里的模块数据）
+      for (const k in obj) {
+        if (!(k in out)) out[k] = obj[k];
+      }
       return out;
     }
     return obj === undefined ? defaults : obj;
