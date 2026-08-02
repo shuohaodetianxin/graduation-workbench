@@ -43,14 +43,16 @@
       toast('已断开云端连接', 'ok');
     });
 
-    // PWA：Service Worker — 先清掉所有旧 SW 再注册新版
+    // PWA：杀光所有旧 Service Worker，不再注册新的（避免缓存旧代码）
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
         regs.forEach(r => r.unregister());
-      }).finally(() => {
-        navigator.serviceWorker.register('./sw.js?v=18').catch(() => {});
+        // 清空所有 SW 缓存
+        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
       });
     }
+    // 显示版本号
+    document.getElementById('topbarTitle').dataset.ver = 'v20260802';
 
     // 侧边栏分组折叠/展开（状态持久化到 localStorage）
     initSidebarGroups();
