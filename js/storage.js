@@ -413,8 +413,14 @@
         // 失败则降级为下载
       }
     }
-    // 降级：下载单个 .md 文件
+    // 移动端/WebView：弹出可复制的内容窗口
     const text = exportAllMarkdown();
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    if (isMobile || !window.open) {
+      showExportModal(text);
+      return { ok: true, mode: 'modal' };
+    }
+    // 桌面降级：下载单个 .md 文件
     const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -424,6 +430,31 @@
     a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
     return { ok: true, mode: 'single' };
+  }
+
+  function showExportModal(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.readOnly = true;
+    ta.style.cssText = 'width:100%;height:50vh;font-size:12px;font-family:monospace;border:1px solid #ddd;border-radius:8px;padding:10px;resize:none;box-sizing:border-box';
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = '📋 一键复制全部';
+    copyBtn.style.cssText = 'display:block;width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px;background:#7a9eb1;color:#fff;font-size:15px;font-weight:600;cursor:pointer';
+    copyBtn.onclick = () => {
+      ta.select();
+      document.execCommand('copy');
+      copyBtn.textContent = '✅ 已复制';
+      setTimeout(() => { copyBtn.textContent = '📋 一键复制全部'; }, 2000);
+    };
+    const wrap = document.createElement('div');
+    wrap.appendChild(ta);
+    wrap.appendChild(copyBtn);
+
+    if (window.UI && window.UI.openModal) {
+      window.UI.openModal({ title: '导出预览（复制后粘贴到备忘录保存）', body: wrap, footer: null });
+    } else {
+      document.body.appendChild(copyBtn);
+    }
   }
 
   Store.clearAllData = async function () {
