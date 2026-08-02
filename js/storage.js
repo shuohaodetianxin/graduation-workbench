@@ -310,7 +310,13 @@
         lines.push(`## ${label}`);
         v.forEach(item => {
           if (typeof item === 'string') lines.push(`- ${item}`);
-          else if (item.name) lines.push(`- ${item.name}${item.dataUrl ? ' (附件)' : ''}`);
+          else if (item.name) {
+            if (item.dataUrl && item.type && item.type.startsWith('image/')) {
+              lines.push(`![${item.name}](${item.dataUrl})`);
+            } else {
+              lines.push(`- ${item.name} (附件)`);
+            }
+          }
         });
         lines.push('');
       } else if (typeof v === 'object' && v && v.dataUrl) {
@@ -385,6 +391,7 @@
     if (window.showDirectoryPicker) {
       try {
         const dir = await window.showDirectoryPicker();
+        let written = 0, failed = 0;
         for (const k in Store.state.records) {
           const arr = Store.state.records[k] || [];
           if (!arr.length) continue;
@@ -400,14 +407,18 @@
                 const imgFh = await sub.getFileHandle(`${baseName}_img${i+1}.${ext}`, { create: true });
                 const w = await imgFh.createWritable();
                 await w.write(blob); await w.close();
-              } catch (_) {}
+                written++;
+              } catch (_) { failed++; }
             }
-            const fh = await sub.getFileHandle(baseName + '.md', { create: true });
-            const w = await fh.createWritable();
-            await w.write(toMarkdown(r, k)); await w.close();
+            try {
+              const fh = await sub.getFileHandle(baseName + '.md', { create: true });
+              const w = await fh.createWritable();
+              await w.write(toMarkdown(r, k)); await w.close();
+              written++;
+            } catch (_) { failed++; }
           }
         }
-        return { ok: true, mode: 'folder' };
+        return { ok: true, mode: 'folder', written, failed };
       } catch (e) {
         if (e && e.name === 'AbortError') return { ok: false, aborted: true };
         // 失败则降级为下载

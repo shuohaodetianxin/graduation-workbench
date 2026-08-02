@@ -25,7 +25,10 @@
     document.getElementById('exportMd').addEventListener('click', async () => {
       const r = await StorageUtils.exportToLocalFolder();
       if (r.aborted) return;
-      if (r.mode === 'folder') toast('已导出到所选文件夹', 'ok');
+      if (r.mode === 'folder') {
+        const msg = '已导出 ' + (r.written||0) + ' 个文件' + (r.failed > 0 ? ('，' + r.failed + ' 个失败') : '');
+        toast(msg, r.failed > 0 ? 'err' : 'ok');
+      }
       else toast('已导出 Markdown 文件（浏览器不支持选目录时）', 'ok');
     });
 
