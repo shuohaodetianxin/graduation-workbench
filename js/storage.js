@@ -378,8 +378,23 @@
           if (!arr.length) continue;
           const sub = await dir.getDirectoryHandle(k, { create: true });
           for (const r of arr) {
-            const fileName = `${(r.date||'').slice(0,10)}_${(r.title||r.name||r.id)}.md`.replace(/[\/\\:*?"<>|]/g,'_');
-            const fh = await sub.getFileHandle(fileName, { create: true });
+            const baseName = `${(r.date||'').slice(0,10)}_${(r.title||r.name||r.id)}`.replace(/[\/\\:*?"<>|]/g,'_');
+            // 导出图片附件
+            const imgs = (r.files || []).filter(f => f.type && f.type.startsWith('image/'));
+            for (let i = 0; i < imgs.length; i++) {
+              const f = imgs[i];
+              const ext = f.type === 'image/jpeg' ? 'jpg' : (f.type.split('/')[1] || 'png');
+              try {
+                const resp = await fetch(f.dataUrl);
+                const blob = await resp.blob();
+                const imgFh = await sub.getFileHandle(`${baseName}_img${i+1}.${ext}`, { create: true });
+                const w = await imgFh.createWritable();
+                await w.write(blob);
+                await w.close();
+              } catch (_) {}
+            }
+            // 导出 Markdown
+            const fh = await sub.getFileHandle(baseName + '.md', { create: true });
             const w = await fh.createWritable();
             await w.write(toMarkdown(r, k));
             await w.close();
