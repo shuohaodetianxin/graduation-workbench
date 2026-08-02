@@ -142,13 +142,13 @@
       if (!this.client) return { ok: false, reason: 'no-client' };
       this.syncing = true;
       try {
-        for (const key in Storage.state.records) {
+        // 遍历所有模块（不只是本地已有的），确保新设备也能拉到云端数据
+        for (const key in SYNC_TABLES) {
+          if (key.startsWith('__')) continue; // 跳过 __tags__ / __settings__
           const table = SYNC_TABLES[key];
-          if (!table) continue;
           const { data, error } = await this.client.from(table).select('*');
           if (error) { console.warn('pull', key, error); continue; }
           if (Array.isArray(data) && data.length > 0) {
-            // 云端有数据才覆盖本地；为空时保留本地记录，防止误清空
             Storage.state.records[key] = data.map(r => r.data || r);
           }
         }
