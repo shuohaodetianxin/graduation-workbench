@@ -61,17 +61,17 @@
     }
   }
 
-  function save(state) {
+  function save(state, skipPush) {
     state.version = DATA_VERSION;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    // 派发全局事件，便于首页等页面监听刷新
     try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
-    // 自动推送云端（如果已配置且开启 autoSync）
-    try {
-      if (window.SupabaseSync && window.SupabaseSync.pushNow) {
-        window.SupabaseSync.pushNow();
-      }
-    } catch (_) {}
+    if (!skipPush) {
+      try {
+        if (window.SupabaseSync && window.SupabaseSync.pushNow) {
+          window.SupabaseSync.pushNow();
+        }
+      } catch (_) {}
+    }
   }
 
   function mergeDefaults(obj, defaults) {

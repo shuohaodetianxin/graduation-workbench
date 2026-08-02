@@ -191,7 +191,7 @@
             if (arr.length > 0 && arr[0].data) Storage.state.tags = arr[0].data;
           }
         } catch (_) {}
-        Storage.save();
+        Storage.save(true);  // 不触发pushNow，避免互推循环
         return { ok: true };
       } catch (e) {
         return { ok: false, error: e.message };
