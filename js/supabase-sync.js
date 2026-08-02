@@ -75,6 +75,12 @@
         await this.pushAll();
       }, 3000);
     },
+    // 立即推送（增删改时触发）
+    pushNow() {
+      const s = Storage.getSettings();
+      if (!s.autoSync || !this.isConfigured() || this.syncing) return;
+      this.pushAll();
+    },
 
     // ====== 自动拉取（定期检查云端新数据）======
     startAutoPull(intervalMs = 15000) {

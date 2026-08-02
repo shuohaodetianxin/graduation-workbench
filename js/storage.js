@@ -68,8 +68,8 @@
     try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
     // 自动推送云端（如果已配置且开启 autoSync）
     try {
-      if (window.SupabaseSync && window.SupabaseSync.autoPush) {
-        window.SupabaseSync.autoPush();
+      if (window.SupabaseSync && window.SupabaseSync.pushNow) {
+        window.SupabaseSync.pushNow();
       }
     } catch (_) {}
   }
