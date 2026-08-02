@@ -163,8 +163,7 @@
 
     getRecords(key) {
       const arr = this.state.records[key] || [];
-      // 保证每条记录有唯一id
-      arr.forEach(r => { if (!r.id) { r.id = genId(); console.log('[storage] auto-id assigned', r.id); } });
+      arr.forEach(r => { if (!r.id) r.id = genId(); });
       return arr;
     },
 
@@ -192,14 +191,11 @@
     async deleteRecord(key, id) {
       const arr = this.state.records[key] || [];
       const idx = arr.findIndex(r => r.id === id);
-      console.log('[storage] delete', key, id, 'found at', idx, 'arr length', arr.length);
       if (idx >= 0) {
         arr.splice(idx, 1);
         await this.save();
-        console.log('[storage] deleted, new length', arr.length);
         return true;
       }
-      console.warn('[storage] delete NOT found, id=', id, 'available ids=', arr.map(r=>r.id));
       return false;
     },
 

@@ -23,19 +23,15 @@
     _currentRoute = route;
     clear(root);
 
-    // 顶部：标题 + 搜索 + 批量删除
-    const batchBtn = h('button', { class: 'btn btn-ghost btn-sm', style: 'margin-left:auto' }, '🗑️ 批量删除');
+    // 顶部：标题 + 搜索
     const head = h('div', { class: 'card' }, [
       h('div', { class: 'card-title' }, [
         h('span', { class: 'dot', style: 'background:var(--c-exp)' }),
         cfg.title,
       ]),
-      h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
-        h('div', { class: 'search' }, [
-          h('span', null, '🔍'),
-          h('input', { id: 'expSearch', placeholder: '搜索本模块记录' }),
-        ]),
-        batchBtn,
+      h('div', { class: 'search' }, [
+        h('span', null, '🔍'),
+        h('input', { id: 'expSearch', placeholder: '搜索本模块记录' }),
       ])
     ]);
     root.appendChild(head);
@@ -58,9 +54,7 @@
 
     // 列表
     const listWrap = h('div', { id: 'expListWrap' });
-    const batchBarWrap = h('div', { id: 'expBatchWrap' });
     root.appendChild(listWrap);
-    root.appendChild(batchBarWrap);
 
     // 加号
     const fab = h('button', { class: 'btn-fab', 'aria-label': '新建' }, '＋');
@@ -73,72 +67,12 @@
     // 搜索
     $('#expSearch').addEventListener('input', refreshList);
 
-    // 批量删除开关
-    batchBtn.addEventListener('click', () => {
-      _batchMode = !_batchMode;
-      _batchSelected.clear();
-      batchBtn.textContent = _batchMode ? '✕ 退出批量' : '🗑️ 批量删除';
-      batchBtn.className = _batchMode ? 'btn btn-soft btn-sm' : 'btn btn-ghost btn-sm';
-      _refreshFn();
-    });
-
-    _refreshFn = refreshList;
-    window._batchFoot = refreshBatchFooter;  // 暴露到全局供 buildItem 调用
     refreshList();
-
-    // 批量删除——只刷新底部工具栏
-    function refreshBatchFooter() {
-      clear(batchBarWrap);
-      if (!_batchMode) return;
-      const kw = ($('#expSearch').value || '').trim().toLowerCase();
-      let visibleRecords = [];
-      if (kw) {
-        visibleRecords = Storage.getRecords(route).filter(r => JSON.stringify(r).toLowerCase().includes(kw));
-      } else {
-        visibleRecords = Storage.getRecords(route).filter(r => r.date === selectedDate);
-      }
-      const totalN = visibleRecords.length;
-      // 为没有id的记录生成临时id
-      visibleRecords.forEach(r => { if (!r.id) r.id = '_r_' + Math.random().toString(36).slice(2,10); });
-
-      const bar = h('div', { class: 'batch-bar' }, [
-        h('span', { class: 'batch-count' },
-          _batchSelected.size > 0 ? ('已选 ' + _batchSelected.size + ' / ' + totalN + ' 条')
-          : ('共 ' + totalN + ' 条，点击复选框选择')
-        ),
-        h('button', { class: 'btn btn-ghost btn-sm', onclick: () => {
-          visibleRecords.forEach(r => _batchSelected.add(r.id));
-          refreshBatchFooter();
-          document.querySelectorAll('.batch-cb').forEach(cb => { cb.checked = true; });
-        }}, '全选'),
-        h('button', { class: 'btn btn-ghost btn-sm', onclick: () => {
-          _batchSelected.clear();
-          refreshBatchFooter();
-          document.querySelectorAll('.batch-cb').forEach(cb => { cb.checked = false; });
-        }}, '取消全选'),
-        h('button', { class: 'btn btn-danger btn-sm', disabled: _batchSelected.size === 0 ? 'disabled' : null,
-          onclick: _batchSelected.size === 0 ? null : (async () => {
-            const selIds = [..._batchSelected];
-            if (!await confirmDialog('确认删除 ' + selIds.length + ' 条记录吗？\n此操作不可撤销，图片也将一并删除。')) return;
-            for (const id of selIds) { await Storage.deleteRecord(route, id); }
-            _batchSelected.clear();
-            _batchMode = false;
-            batchBtn.textContent = '🗑️ 批量删除';
-            batchBtn.className = 'btn btn-ghost btn-sm';
-            cal.refresh(Storage.getDateIndexByRoute(route));
-            _refreshFn();
-            toast('已删除 ' + selIds.length + ' 条', 'ok');
-          })
-        }, '🗑️ 确认删除'),
-      ]);
-      batchBarWrap.appendChild(bar);
-    }
 
     function refreshList() {
       clear(listWrap);
       const kw = ($('#expSearch').value || '').trim().toLowerCase();
 
-      // 搜索模式：在当前子模块的所有日期中搜索
       if (kw) {
         const records = Storage.getRecords(route)
           .filter(r => JSON.stringify(r).toLowerCase().includes(kw))
@@ -150,18 +84,15 @@
           listWrap.appendChild(h('div', { class: 'empty', style: 'padding:20px;text-align:center' },
             '没有匹配的记录'));
         } else {
-          const list = h('div', { class: 'list' });
-          records.forEach(r => list.appendChild(buildItem(r, cfg, () => {
+          const list = renderRecordsList(records, r => buildItem(r, cfg, () => {
             cal.refresh(Storage.getDateIndexByRoute(route));
             refreshList();
-          })));
+          }));
           listWrap.appendChild(list);
         }
-        refreshBatchFooter();
         return;
       }
 
-      // 正常模式：只显示选中日期的记录
       const records = Storage.getRecords(route);
       let filtered = records
         .filter(r => r.date === selectedDate)
@@ -176,14 +107,12 @@
           '这一天还没有记录，点右下角 ＋ 新建吧'
         ));
       } else {
-        const list = h('div', { class: 'list' });
-        filtered.forEach(r => list.appendChild(buildItem(r, cfg, () => {
+        const list = renderRecordsList(filtered, r => buildItem(r, cfg, () => {
           cal.refresh(Storage.getDateIndexByRoute(route));
           refreshList();
-        })));
+        }));
         listWrap.appendChild(list);
       }
-      refreshBatchFooter();
     }
 
     // 打开既有记录
@@ -202,18 +131,7 @@
     const thumbs = imgs.length ? h('div', { class: 'li-thumbs' },
       imgs.slice(0, 3).map(f => h('img', { src: f.dataUrl, class: 'li-thumb-img', onclick: (e) => { e.stopPropagation(); viewImage(f.dataUrl); } }))
     ) : null;
-    // 批量模式下的复选框
-    const cb = _batchMode ? (() => {
-      const c = h('input', { type: 'checkbox', class: 'batch-cb' });
-      c.checked = _batchSelected.has(r.id);
-      c.addEventListener('change', (e) => {
-        if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
-        if (window._batchFoot) window._batchFoot();
-      });
-      return c;
-    })() : null;
     const item = h('div', { class: 'list-item' }, [
-      cb,
       h('span', { class: 'li-emoji' }, cfg.title.includes('锡球') ? '⚪' : (cfg.title.includes('锡膏') ? '🟡' : '🏷️')),
       h('div', { class: 'li-main' }, [
         h('div', { class: 'li-title' }, title.slice(0, 40) + (title.length > 40 ? '…' : '')),
@@ -222,12 +140,7 @@
       ]),
       h('div', { class: 'li-meta' }, r.date || ''),
     ]);
-    if (_batchMode) {
-      // 批量模式：不绑定点击打开编辑，只通过复选框操作
-      item.style.cursor = 'default';
-    } else {
-      item.addEventListener('click', () => openEditor(r, cfg, onChange));
-    }
+    item.addEventListener('click', () => openEditor(r, cfg, onChange));
     return item;
   }
 
@@ -259,7 +172,6 @@
 
     const tagIds = data.tags.map(t => t.id);
 
-    // 表单
     const titleInp = h('input', { class: 'input', placeholder: '实验标题（可留空）', value: data.title || '' });
     const dateInp  = h('input', { class: 'input', type: 'date', value: data.date });
     const tagPickerEl = renderTagPicker('exp', tagIds, (ids) => {
@@ -339,11 +251,7 @@
     });
   }
 
-  function getRouteKey() {
-    return _currentRoute || 'exp-tinball-color';
-  }
   let _currentRoute = null;
-  let _batchMode = false, _batchSelected = new Set(), _refreshFn = null;
 
   // ===== 原料标签档案 =====
   function openMaterialEditor(record, cfg, onChange) {
@@ -412,11 +320,5 @@
     });
   }
 
-  // 暴露 currentRoute setter
-  function setCurrentRoute(r) { _currentRoute = r; }
-
-  // 在 Router 调 render 前记录
-  function preRoute(route) { _currentRoute = route; }
-
-  global.ExperimentModule = { render, PAGES, setCurrentRoute, preRoute };
+  global.ExperimentModule = { render, PAGES };
 })(window);
