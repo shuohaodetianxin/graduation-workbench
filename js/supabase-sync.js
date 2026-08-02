@@ -136,7 +136,17 @@
             if (!res.ok) continue;
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-              Storage.state.records[key] = data.map(r => r.data || r);
+              // 合并云端和本地：云端数据按id覆盖/新增，本地独有数据保留
+              const cloudMap = {};
+              data.forEach(r => { if (r.data) cloudMap[r.data.id || r.id] = r.data; });
+              const local = Storage.state.records[key] || [];
+              const merged = [];
+              const seen = new Set();
+              // 先加云端数据
+              Object.values(cloudMap).forEach(r => { merged.push(r); seen.add(r.id); });
+              // 再加本地独有的
+              local.forEach(r => { if (!seen.has(r.id)) merged.push(r); });
+              Storage.state.records[key] = merged;
             }
           } catch (e) {
             console.warn('pull error', key, e);
@@ -163,7 +173,6 @@
 
     async syncBoth() {
       const push = await this.pushAll();
-      if (!push.ok) return { push, pull: { ok: false, reason: 'push-failed' } };
       const pull = await this.pullAll();
       return { push, pull };
     }
