@@ -83,6 +83,7 @@
     });
 
     _refreshFn = refreshList;
+    _refreshBatchFn = refreshBatchFooter;
     refreshList();
 
     // 批量删除——只刷新底部工具栏，不重建列表避免视觉闪烁
@@ -210,7 +211,7 @@
       c.checked = _batchSelected.has(r.id);
       c.addEventListener('change', (e) => {
         if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
-        refreshBatchFooter();  // 只刷新底部栏，不重建列表
+        if (_refreshBatchFn) _refreshBatchFn();
       });
       return c;
     })() : null;
@@ -345,7 +346,7 @@
     return _currentRoute || 'exp-tinball-color';
   }
   let _currentRoute = null;
-  let _batchMode = false, _batchSelected = new Set(), _refreshFn = null;
+  let _batchMode = false, _batchSelected = new Set(), _refreshFn = null, _refreshBatchFn = null;
 
   // ===== 原料标签档案 =====
   function openMaterialEditor(record, cfg, onChange) {
