@@ -94,7 +94,7 @@
             body: JSON.stringify(rows),
           });
           results[key] = res.ok ? { ok: true, n: rows.length } 
-            : { ok: false, error: 'HTTP' + res.status + ' ' + (await res.text()).substring(0,60) };
+            : { ok: false, error: 'HTTP' + res.status + ' ' + (await res.text()).substring(0,200) };
         }
         // tags
         const tagsRow = { id: 'tags', data: Storage.state.tags, updated_at: new Date().toISOString() };
