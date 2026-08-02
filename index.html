@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#DDEBF3" />
+  <title>加油毕业工作台</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- 侧边栏遮罩（手机端） -->
+    <div class="sidebar-mask" id="sidebarMask" aria-hidden="true"></div>
+
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar" aria-label="侧边导航">
+      <div class="sidebar-head">
+        <div class="brand">
+          <div class="brand-emoji">🌸</div>
+          <div class="brand-text">
+            <div class="brand-title">加油毕业工作台</div>
+            <div class="brand-sub">Graduation Workbench</div>
+          </div>
+        </div>
+        <button class="icon-btn close-sidebar" id="closeSidebar" aria-label="收起侧边栏">✕</button>
+      </div>
+
+      <nav class="nav" id="nav">
+        <a class="nav-item" data-route="home">
+          <span class="nav-emoji">🏠</span><span>工作台首页</span>
+        </a>
+
+        <div class="nav-group" data-group="exp">
+          <div class="nav-group-title" data-toggle-group="exp" role="button" tabindex="0" aria-expanded="true">
+            <span class="nav-emoji">🔬</span><span class="nav-group-label">实验进度</span><span class="nav-caret">▾</span>
+          </div>
+          <a class="nav-sub" data-route="exp-tinball-color">锡球实验 · 有色</a>
+          <a class="nav-sub" data-route="exp-tinball-clear">锡球实验 · 无色</a>
+          <a class="nav-sub" data-route="exp-tinpaste-color">锡膏实验 · 有色</a>
+          <a class="nav-sub" data-route="exp-tinpaste-clear">锡膏实验 · 无色</a>
+          <a class="nav-sub" data-route="exp-materials">原料标签档案</a>
+        </div>
+
+        <div class="nav-group" data-group="patent">
+          <div class="nav-group-title" data-toggle-group="patent" role="button" tabindex="0" aria-expanded="true">
+            <span class="nav-emoji">📜</span><span class="nav-group-label">专利进度</span><span class="nav-caret">▾</span>
+          </div>
+          <a class="nav-sub" data-route="patent-library">专利资料库</a>
+          <a class="nav-sub" data-route="patent-innovation">创新点记录</a>
+          <a class="nav-sub" data-route="patent-progress">我的专利进度</a>
+        </div>
+
+        <div class="nav-group" data-group="job">
+          <div class="nav-group-title" data-toggle-group="job" role="button" tabindex="0" aria-expanded="true">
+            <span class="nav-emoji">💼</span><span class="nav-group-label">就业进度</span><span class="nav-caret">▾</span>
+          </div>
+          <a class="nav-sub" data-route="job-study">学习</a>
+          <a class="nav-sub" data-route="job-companies">相关公司</a>
+          <a class="nav-sub" data-route="job-resume">我的简历</a>
+          <a class="nav-sub" data-route="job-fair">招聘会</a>
+        </div>
+
+        <div class="nav-group" data-group="paper">
+          <div class="nav-group-title" data-toggle-group="paper" role="button" tabindex="0" aria-expanded="true">
+            <span class="nav-emoji">📄</span><span class="nav-group-label">论文进度</span><span class="nav-caret">▾</span>
+          </div>
+          <a class="nav-sub" data-route="paper-progress">论文进度时间线</a>
+        </div>
+      </nav>
+
+      <div class="sidebar-foot">
+        <!-- 连接状态面板 -->
+        <div class="sync-panel" id="syncPanel">
+          <div class="sync-panel-row offline" id="syncPanelRow">
+            <span class="sync-dot"></span>
+            <span id="syncPanelStatus">未连接云端</span>
+          </div>
+          <div class="sync-panel-time" id="syncPanelTime"></div>
+          <div class="sync-panel-actions">
+            <button id="syncPanelBtn">立即同步</button>
+            <button id="syncPanelConfig">设置</button>
+          </div>
+        </div>
+        <button class="ghost-btn" id="openSettings">⚙️ 设置 · Supabase 同步</button>
+        <button class="ghost-btn" id="exportMd">📥 导出全部 Markdown</button>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="openSidebar" aria-label="打开侧边栏">☰</button>
+        <div class="topbar-title" id="topbarTitle">工作台首页</div>
+        <div class="topbar-right">
+          <span class="sync-indicator offline" id="syncBadge" title="同步状态">
+            <span class="sync-dot"></span>
+            <span class="sync-text">本地</span>
+          </span>
+          <button class="icon-btn" id="syncNowBtn" aria-label="立即同步" title="立即同步">⟳</button>
+        </div>
+      </header>
+
+      <section class="content" id="content">
+        <!-- 各路由页面在这里渲染 -->
+      </section>
+
+      <!-- 底部导航（手机端） -->
+      <nav class="bottom-nav" aria-label="底部导航">
+        <a data-route="home"><span>🏠</span><small>首页</small></a>
+        <a data-route="exp-tinball-color"><span>🔬</span><small>实验</small></a>
+        <a data-route="patent-progress"><span>📜</span><small>专利</small></a>
+        <a data-route="job-study"><span>💼</span><small>就业</small></a>
+        <a data-route="paper-progress"><span>📄</span><small>论文</small></a>
+      </nav>
+    </main>
+
+    <!-- 通用弹窗 -->
+    <div class="modal" id="modal" aria-hidden="true">
+      <div class="modal-mask" data-modal-close></div>
+      <div class="modal-panel" id="modalPanel">
+        <div class="modal-head">
+          <div class="modal-title" id="modalTitle">标题</div>
+          <button class="icon-btn" data-modal-close aria-label="关闭">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot" id="modalFoot"></div>
+      </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-host" id="toastHost"></div>
+
+    <!-- Supabase SDK（按需懒加载） -->
+  </div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/calendar.js"></script>
+  <script src="./js/supabase-sync.js"></script>
+  <script src="./js/modules/home.js"></script>
+  <script src="./js/modules/experiment.js"></script>
+  <script src="./js/modules/patent.js"></script>
+  <script src="./js/modules/employment.js"></script>
+  <script src="./js/modules/paper.js"></script>
+  <script src="./js/router.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
