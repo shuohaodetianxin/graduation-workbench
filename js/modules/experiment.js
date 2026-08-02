@@ -213,13 +213,8 @@
       h('div', { class: 'li-meta' }, r.date || ''),
     ]);
     if (_batchMode) {
-      item.addEventListener('click', (e) => {
-        if (e.target.tagName === 'INPUT') return;
-        const cb = item.querySelector('.batch-cb');
-        cb.checked = !cb.checked;
-        if (cb.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
-        _refreshFn();
-      });
+      // 批量模式：不绑定点击打开编辑，只通过复选框操作
+      item.style.cursor = 'default';
     } else {
       item.addEventListener('click', () => openEditor(r, cfg, onChange));
     }
