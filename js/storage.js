@@ -63,7 +63,13 @@
 
   function save(state) {
     state.version = DATA_VERSION;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error('保存失败，存储空间不足', e);
+      try { window.dispatchEvent(new CustomEvent('storage-error', { detail: e })); } catch (_) {}
+      return;
+    }
     try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
   }
 

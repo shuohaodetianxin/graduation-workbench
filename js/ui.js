@@ -244,9 +244,37 @@
   function readFileAsDataURL(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
-      fr.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: fr.result });
+      fr.onload = () => {
+        if (file.type && file.type.startsWith('image/')) {
+          compressImage(fr.result, 800, 0.7).then(dataUrl => {
+            resolve({ name: file.name, type: 'image/jpeg', size: dataUrl.length, dataUrl });
+          }).catch(() => {
+            // 压缩失败用原图
+            resolve({ name: file.name, type: file.type, size: file.size, dataUrl: fr.result });
+          });
+        } else {
+          resolve({ name: file.name, type: file.type, size: file.size, dataUrl: fr.result });
+        }
+      };
       fr.onerror = reject;
       fr.readAsDataURL(file);
+    });
+  }
+
+  function compressImage(dataUrl, maxWidth, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
     });
   }
 
