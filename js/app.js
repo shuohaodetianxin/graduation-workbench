@@ -183,16 +183,20 @@
     if (r.push.ok && r.pull.ok) {
       const ts = new Date().toISOString();
       localStorage.setItem(SYNC_TIME_KEY, ts);
+      // 统计推送和拉取了多少条
+      let pushCount = 0, pullCount = 0;
+      if (r.push.results) Object.values(r.push.results).forEach(v => { if (v.n) pushCount += v.n; });
       setSyncBadge('online', '已同步');
       setSyncPanel('online', '云端已连接', '刚刚同步');
-      toast('云端同步完成', 'ok');
-      // 触发当前页面重新渲染
+      toast('同步完成：推' + pushCount + '条 拉' + pullCount + '条', 'ok');
       try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
       Router.dispatch();
     } else {
+      const errMsg = r.push.error || r.push.reason || r.pull.error || r.pull.reason || '未知错误';
       setSyncBadge('error', '同步失败');
-      setSyncPanel('error', '同步失败', (r.push.error || r.pull.error || '未知错误'));
-      toast('同步失败：' + (r.push.error || r.pull.error || '未知错误'), 'err');
+      setSyncPanel('error', '同步失败', errMsg);
+      toast('同步失败：' + errMsg, 'err');
+      console.warn('Sync fail:', JSON.stringify(r));
     }
   }
 
