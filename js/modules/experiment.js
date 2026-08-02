@@ -83,6 +83,7 @@
     });
 
     _refreshFn = refreshList;
+    window._batchFoot = refreshBatchFooter;  // 暴露到全局供 buildItem 调用
     refreshList();
 
     // 批量删除——只刷新底部工具栏
@@ -208,7 +209,7 @@
       c.checked = _batchSelected.has(r.id);
       c.addEventListener('change', (e) => {
         if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
-        if (typeof refreshBatchFooter === 'function') refreshBatchFooter();
+        if (window._batchFoot) window._batchFoot();
       });
       return c;
     })() : null;
