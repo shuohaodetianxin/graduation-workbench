@@ -81,6 +81,7 @@
     });
 
     _refreshFn = refreshList;
+    console.log('[batch] mode=', _batchMode, 'selected=', [..._batchSelected], 'ids');
     refreshList();
 
     function refreshList() {
@@ -198,6 +199,7 @@
       c.checked = _batchSelected.has(r.id);
       c.addEventListener('change', (e) => {
         if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
+        console.log('batch check', r.id, 'set size', _batchSelected.size);
         _refreshFn();
       });
       return c;

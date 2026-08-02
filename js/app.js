@@ -34,6 +34,9 @@
 
     Router.init();
 
+    // 版本标记（方便确认是否为最新代码）
+    document.getElementById('topbarTitle').title = 'v=25';
+
     // 显示存储状态
     updateStorageStatus();
     window.addEventListener('storage-changed', updateStorageStatus);
