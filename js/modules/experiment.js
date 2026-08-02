@@ -61,7 +61,7 @@
     fab.addEventListener('click', () => openEditor(null, cfg, () => {
       cal.refresh(Storage.getDateIndexByRoute(route));
       refreshList();
-    }));
+    }, selectedDate));
     root.appendChild(fab);
 
     // 搜索
@@ -153,12 +153,12 @@
   }
 
   // ===== 编辑器 =====
-  function openEditor(record, cfg, onChange) {
+  function openEditor(record, cfg, onChange, defaultDate) {
     const isNew = !record;
     const data = record ? JSON.parse(JSON.stringify(record)) : {
       id: null,
       title: '',
-      date: today(),
+      date: defaultDate || today(),
       tags: [],
       idea: '',
       result: '',
