@@ -79,50 +79,41 @@
       if (!this.isConfigured()) return { ok: false, reason: 'not-configured' };
       this.syncing = true;
       const results = {};
-      const foundKeys = []; // 调试：记录找到了哪些模块
       try {
         for (const key in Storage.state.records) {
           const table = SYNC_TABLES[key];
           if (!table) continue;
           const arr = Storage.state.records[key] || [];
-          if (arr.length) foundKeys.push(key + '=' + arr.length);
           if (!arr.length) continue;
-          // 逐条推送：先插入，冲突时用PATCH更新（不删，避免失败丢数据）
-          let nOk = 0, lastErr = null;
-          for (const r of arr) {
-            const row = { 
-              id: r.id || ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)), 
-              data: JSON.parse(JSON.stringify(r)),
-              updated_at: r.updatedAt || new Date().toISOString() 
-            };
-            let res = await fetch(this._restUrl() + '/' + table, {
-              method: 'POST',
-              headers: { ...this._headers(), 'Prefer': 'return=minimal' },
-              body: JSON.stringify(row),
-            });
-            // 如果id冲突（已有记录），用PATCH更新而非删插
-            if (res.status === 409) {
-              res = await fetch(this._restUrl() + '/' + table + '?id=eq.' + encodeURIComponent(row.id), {
-                method: 'PATCH',
-                headers: { ...this._headers(), 'Prefer': 'return=minimal' },
-                body: JSON.stringify(row),
-              });
-            }
-            if (res.ok) nOk++; else {
-              lastErr = 'HTTP' + res.status + ' ' + (await res.text().catch(()=>'')).substring(0,200);
-            }
-          }
-          results[key] = nOk === arr.length ? { ok: true, n: nOk } : { ok: false, error: lastErr || 'unknown', n: nOk };
-          if (nOk !== arr.length) results._anyError = true;
+          // 构建推送行，确保每条有唯一id
+          const rows = arr.map(r => ({ 
+            id: r.id || ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)), 
+            data: JSON.parse(JSON.stringify(r)),
+            updated_at: r.updatedAt || new Date().toISOString() 
+          }));
+          // 先删光该表，再批量插入（全量替换，简单可靠）
+          await fetch(this._restUrl() + '/' + table + '?id=neq.0', {
+            method: 'DELETE',
+            headers: this._headers(),
+          }).catch(() => {});
+          const res = await fetch(this._restUrl() + '/' + table, {
+            method: 'POST',
+            headers: { ...this._headers(), 'Prefer': 'return=minimal' },
+            body: JSON.stringify(rows),
+          });
+          results[key] = res.ok ? { ok: true, n: rows.length } 
+            : { ok: false, error: 'HTTP' + res.status + ' ' + (await res.text().catch(()=>'')).substring(0,200) };
+          if (!res.ok) results._anyError = true;
         }
-        // tags
+        // tags: 删旧插新
         const tagsRow = { id: 'tags', data: Storage.state.tags, updated_at: new Date().toISOString() };
+        await fetch(this._restUrl() + '/tags?id=eq.tags', { method: 'DELETE', headers: this._headers() }).catch(()=>{});
         await fetch(this._restUrl() + '/tags', {
           method: 'POST',
-          headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
+          headers: { ...this._headers(), 'Prefer': 'return=minimal' },
           body: JSON.stringify(tagsRow),
-        });
-        return { ok: !results._anyError, results, _found: foundKeys };
+        }).catch(()=>{});
+        return { ok: !results._anyError, results };
       } catch (e) {
         return { ok: false, error: e.message };
       } finally {
