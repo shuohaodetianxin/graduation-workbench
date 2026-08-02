@@ -75,8 +75,8 @@
     batchBtn.addEventListener('click', () => {
       _batchMode = !_batchMode;
       _batchSelected.clear();
-      batchBtn.textContent = _batchMode ? '❌ 取消' : '🗑️ 批量删除';
-      batchBtn.className = _batchMode ? 'btn btn-danger btn-sm' : 'btn btn-ghost btn-sm';
+      batchBtn.textContent = _batchMode ? '✕ 退出批量' : '🗑️ 批量删除';
+      batchBtn.className = _batchMode ? 'btn btn-soft btn-sm' : 'btn btn-ghost btn-sm';
       _refreshFn();
     });
 
@@ -134,7 +134,12 @@
     }
 
     function addBatchFooter() {
-      if (!_batchMode || _batchSelected.size === 0) return;
+      if (!_batchMode) return;
+      if (_batchSelected.size === 0) {
+        listWrap.appendChild(h('div', { class: 'batch-bar', style: 'background:#f0f4f8;border-color:#aaa;color:#666' },
+          '👆 点击记录勾选（再点取消），选好后点下方删除'));
+        return;
+      }
       const bar = h('div', { class: 'batch-bar' }, [
         h('span', null, '已选 ' + _batchSelected.size + ' 条'),
         h('button', { class: 'btn btn-danger', onclick: async () => {
