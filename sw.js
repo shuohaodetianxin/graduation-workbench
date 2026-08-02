@@ -1,5 +1,5 @@
 // Service Worker - 离线缓存
-const CACHE = 'graduation-workbench-v13';
+const CACHE = 'graduation-workbench-v14';
 const ASSETS = [
   './',
   './index.html',
