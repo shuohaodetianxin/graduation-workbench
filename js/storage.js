@@ -370,6 +370,16 @@
   }
 
   async function exportToLocalFolder() {
+    let totalRecs = 0;
+    for (const k in Store.state.records) totalRecs += (Store.state.records[k]||[]).length;
+    if (totalRecs === 0) {
+      // 用全局 toast 提示
+      if (typeof window !== 'undefined' && window.UI && window.UI.toast) {
+        window.UI.toast('没有记录可导出', 'err');
+      }
+      return { ok: false, reason: 'empty' };
+    }
+    // 桌面 Chrome/Edge：选目录导出
     if (window.showDirectoryPicker) {
       try {
         const dir = await window.showDirectoryPicker();
@@ -379,34 +389,38 @@
           const sub = await dir.getDirectoryHandle(k, { create: true });
           for (const r of arr) {
             const baseName = `${(r.date||'').slice(0,10)}_${(r.title||r.name||r.id)}`.replace(/[\/\\:*?"<>|]/g,'_');
-            // 导出图片附件
             const imgs = (r.files || []).filter(f => f.type && f.type.startsWith('image/'));
             for (let i = 0; i < imgs.length; i++) {
               const f = imgs[i];
               const ext = f.type === 'image/jpeg' ? 'jpg' : (f.type.split('/')[1] || 'png');
               try {
-                const resp = await fetch(f.dataUrl);
-                const blob = await resp.blob();
+                const blob = await (await fetch(f.dataUrl)).blob();
                 const imgFh = await sub.getFileHandle(`${baseName}_img${i+1}.${ext}`, { create: true });
                 const w = await imgFh.createWritable();
-                await w.write(blob);
-                await w.close();
+                await w.write(blob); await w.close();
               } catch (_) {}
             }
-            // 导出 Markdown
             const fh = await sub.getFileHandle(baseName + '.md', { create: true });
             const w = await fh.createWritable();
-            await w.write(toMarkdown(r, k));
-            await w.close();
+            await w.write(toMarkdown(r, k)); await w.close();
           }
         }
         return { ok: true, mode: 'folder' };
       } catch (e) {
         if (e && e.name === 'AbortError') return { ok: false, aborted: true };
+        // 失败则降级为下载
       }
     }
+    // 降级：下载单个 .md 文件
     const text = exportAllMarkdown();
-    downloadFile(`graduation-workbench-${new Date().toISOString().slice(0,10)}.md`, text);
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `graduation-workbench-${new Date().toISOString().slice(0,10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
     return { ok: true, mode: 'single' };
   }
 
