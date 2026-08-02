@@ -87,20 +87,38 @@
           const arr = Storage.state.records[key] || [];
           if (arr.length) foundKeys.push(key + '=' + arr.length);
           if (!arr.length) continue;
-          const rows = arr.map(r => ({ 
-            id: r.id || 'unknown', 
-            data: JSON.parse(JSON.stringify(r)),  // 清洗：去undefined和非法值
-            updated_at: r.updatedAt || new Date().toISOString() 
-          }));
-          const res = await fetch(this._restUrl() + '/' + table, {
-            method: 'POST',
-            headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
-            body: JSON.stringify(rows),
-          });
-          results[key] = res.ok ? { ok: true, n: rows.length } 
-            : { ok: false, error: 'HTTP' + res.status + ' ' + (await res.text()).substring(0,200) };
-          // 任何一条失败都标记整体失败
-          if (!res.ok) results._anyError = true;
+          // 逐条推送（DELETE旧+INSERT新=简单可靠的upsert）
+          let nOk = 0, lastErr = null;
+          for (const r of arr) {
+            const row = { 
+              id: r.id || 'unknown', 
+              data: JSON.parse(JSON.stringify(r)),
+              updated_at: r.updatedAt || new Date().toISOString() 
+            };
+            // 先尝试直接插入
+            let res = await fetch(this._restUrl() + '/' + table, {
+              method: 'POST',
+              headers: { ...this._headers(), 'Prefer': 'return=minimal' },
+              body: JSON.stringify(row),
+            });
+            // 如果id冲突，删掉旧的重插
+            if (res.status === 409) {
+              await fetch(this._restUrl() + '/' + table + '?id=eq.' + encodeURIComponent(row.id), {
+                method: 'DELETE',
+                headers: this._headers(),
+              }).catch(() => {});
+              res = await fetch(this._restUrl() + '/' + table, {
+                method: 'POST',
+                headers: { ...this._headers(), 'Prefer': 'return=minimal' },
+                body: JSON.stringify(row),
+              });
+            }
+            if (res.ok) nOk++; else {
+              lastErr = 'HTTP' + res.status + ' ' + (await res.text().catch(()=>'')).substring(0,200);
+            }
+          }
+          results[key] = nOk === arr.length ? { ok: true, n: nOk } : { ok: false, error: lastErr || 'unknown', n: nOk };
+          if (nOk !== arr.length) results._anyError = true;
         }
         // tags
         const tagsRow = { id: 'tags', data: Storage.state.tags, updated_at: new Date().toISOString() };
