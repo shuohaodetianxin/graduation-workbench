@@ -1146,6 +1146,16 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .li-thumb-img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid var(--line-soft); }
 .li-thumb-img:hover { opacity: 0.85; }
 
+/* 批量删除 */
+.batch-cb { width: 20px; height: 20px; margin-right: 8px; flex-shrink: 0; accent-color: var(--danger); }
+.batch-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; background: #fff3f3;
+  border: 1px solid var(--danger); border-radius: var(--r-md);
+  margin-top: 10px; font-size: 14px; font-weight: 600;
+}
+.batch-bar .btn { margin-left: auto; }
+
 /* Markdown 预览样式 */
 .md-preview {
   font-family: var(--ff-zh);

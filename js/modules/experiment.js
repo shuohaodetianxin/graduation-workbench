@@ -23,15 +23,19 @@
     _currentRoute = route;
     clear(root);
 
-    // 顶部：标题 + 搜索
+    // 顶部：标题 + 搜索 + 批量删除
+    const batchBtn = h('button', { class: 'btn btn-ghost btn-sm', style: 'margin-left:auto' }, '🗑️ 批量删除');
     const head = h('div', { class: 'card' }, [
       h('div', { class: 'card-title' }, [
         h('span', { class: 'dot', style: 'background:var(--c-exp)' }),
         cfg.title,
       ]),
-      h('div', { class: 'search' }, [
-        h('span', null, '🔍'),
-        h('input', { id: 'expSearch', placeholder: '搜索本模块记录' }),
+      h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+        h('div', { class: 'search' }, [
+          h('span', null, '🔍'),
+          h('input', { id: 'expSearch', placeholder: '搜索本模块记录' }),
+        ]),
+        batchBtn,
       ])
     ]);
     root.appendChild(head);
@@ -67,6 +71,16 @@
     // 搜索
     $('#expSearch').addEventListener('input', refreshList);
 
+    // 批量删除开关
+    batchBtn.addEventListener('click', () => {
+      _batchMode = !_batchMode;
+      _batchSelected.clear();
+      batchBtn.textContent = _batchMode ? '❌ 取消' : '🗑️ 批量删除';
+      batchBtn.className = _batchMode ? 'btn btn-danger btn-sm' : 'btn btn-ghost btn-sm';
+      _refreshFn();
+    });
+
+    _refreshFn = refreshList;
     refreshList();
 
     function refreshList() {
@@ -91,6 +105,7 @@
           }));
           listWrap.appendChild(list);
         }
+        addBatchFooter();
         return;
       }
 
@@ -115,6 +130,29 @@
         }));
         listWrap.appendChild(list);
       }
+      addBatchFooter();
+    }
+
+    function addBatchFooter() {
+      if (!_batchMode || _batchSelected.size === 0) return;
+      const bar = h('div', { class: 'batch-bar' }, [
+        h('span', null, '已选 ' + _batchSelected.size + ' 条'),
+        h('button', { class: 'btn btn-danger', onclick: async () => {
+          if (!await confirmDialog('确认删除这 ' + _batchSelected.size + ' 条记录吗？此操作不可撤销。')) return;
+          const ids = [..._batchSelected];
+          for (const id of ids) {
+            await Storage.deleteRecord(route, id);
+          }
+          _batchSelected.clear();
+          _batchMode = false;
+          batchBtn.textContent = '🗑️ 批量删除';
+          batchBtn.className = 'btn btn-ghost btn-sm';
+          cal.refresh(Storage.getDateIndexByRoute(route));
+          _refreshFn();
+          toast('已删除 ' + ids.length + ' 条', 'ok');
+        }}, '确认删除'),
+      ]);
+      listWrap.appendChild(bar);
     }
 
     // 打开既有记录
@@ -133,7 +171,13 @@
     const thumbs = imgs.length ? h('div', { class: 'li-thumbs' },
       imgs.slice(0, 3).map(f => h('img', { src: f.dataUrl, class: 'li-thumb-img', onclick: (e) => { e.stopPropagation(); viewImage(f.dataUrl); } }))
     ) : null;
+    // 批量模式下的复选框
+    const cb = _batchMode ? h('input', { type: 'checkbox', class: 'batch-cb', checked: _batchSelected.has(r.id), onchange: (e) => {
+      if (e.target.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
+      _refreshFn();
+    }}) : null;
     const item = h('div', { class: 'list-item' }, [
+      cb,
       h('span', { class: 'li-emoji' }, cfg.title.includes('锡球') ? '⚪' : (cfg.title.includes('锡膏') ? '🟡' : '🏷️')),
       h('div', { class: 'li-main' }, [
         h('div', { class: 'li-title' }, title.slice(0, 40) + (title.length > 40 ? '…' : '')),
@@ -142,7 +186,17 @@
       ]),
       h('div', { class: 'li-meta' }, r.date || ''),
     ]);
-    item.addEventListener('click', () => openEditor(r, cfg, onChange));
+    if (_batchMode) {
+      item.addEventListener('click', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        const cb = item.querySelector('.batch-cb');
+        cb.checked = !cb.checked;
+        if (cb.checked) _batchSelected.add(r.id); else _batchSelected.delete(r.id);
+        _refreshFn();
+      });
+    } else {
+      item.addEventListener('click', () => openEditor(r, cfg, onChange));
+    }
     return item;
   }
 
@@ -258,6 +312,7 @@
     return _currentRoute || 'exp-tinball-color';
   }
   let _currentRoute = null;
+  let _batchMode = false, _batchSelected = new Set(), _refreshFn = null;
 
   // ===== 原料标签档案 =====
   function openMaterialEditor(record, cfg, onChange) {
