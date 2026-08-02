@@ -129,16 +129,27 @@
 
   function buildItem(r, cfg, onChange) {
     const title = r.title || r.idea || r.name || r.summary || '未命名';
+    const imgs = (r.files || []).filter(f => f.type && f.type.startsWith('image/'));
+    const thumbs = imgs.length ? h('div', { class: 'li-thumbs' },
+      imgs.slice(0, 3).map(f => h('img', { src: f.dataUrl, class: 'li-thumb-img', onclick: (e) => { e.stopPropagation(); viewImage(f.dataUrl); } }))
+    ) : null;
     const item = h('div', { class: 'list-item' }, [
       h('span', { class: 'li-emoji' }, cfg.title.includes('锡球') ? '⚪' : (cfg.title.includes('锡膏') ? '🟡' : '🏷️')),
       h('div', { class: 'li-main' }, [
         h('div', { class: 'li-title' }, title.slice(0, 40) + (title.length > 40 ? '…' : '')),
         h('div', { class: 'li-sub' }, (r.tags || []).map(t => '【' + t.name + '】').join('') || '—'),
+        thumbs,
       ]),
       h('div', { class: 'li-meta' }, r.date || ''),
     ]);
     item.addEventListener('click', () => openEditor(r, cfg, onChange));
     return item;
+  }
+
+  // 查看大图
+  function viewImage(dataUrl) {
+    const img = h('img', { src: dataUrl, style: 'max-width:100%;max-height:70vh;border-radius:12px' });
+    openModal({ title: '图片预览', body: img, footer: null });
   }
 
   // ===== 编辑器 =====
