@@ -183,15 +183,23 @@
     if (r.push.ok && r.pull.ok) {
       const ts = new Date().toISOString();
       localStorage.setItem(SYNC_TIME_KEY, ts);
-      // 统计推送和拉取了多少条
-      let pushCount = 0, totalCount = 0;
+      // 统计推送了多少条，以及全部模块总记录数
+      let pushCount = 0;
       if (r.push.results) Object.values(r.push.results).forEach(v => { if (v.n) pushCount += v.n; });
-      // 统计当前模块的记录数
-      const cur = Router.current || 'home';
-      if (Storage.state.records[cur]) totalCount = Storage.state.records[cur].length;
+      let totalAll = 0;
+      const mods = [];
+      for (const k in Storage.state.records) {
+        const n = Storage.state.records[k].length;
+        totalAll += n;
+        if (n > 0) mods.push(k + ':' + n);
+      }
       setSyncBadge('online', '已同步');
       setSyncPanel('online', '云端已连接', '刚刚同步');
-      toast('同步完成：当前模块 ' + totalCount + ' 条记录', 'ok');
+      if (mods.length) {
+        toast('推送' + pushCount + '条 总计' + totalAll + '条 (' + mods.join(',') + ')', 'ok');
+      } else {
+        toast('推送' + pushCount + '条 本地无记录', 'ok');
+      }
       try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
       Router.dispatch();
     } else {
