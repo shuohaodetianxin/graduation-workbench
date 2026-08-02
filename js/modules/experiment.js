@@ -202,8 +202,7 @@
     const thumbs = imgs.length ? h('div', { class: 'li-thumbs' },
       imgs.slice(0, 3).map(f => h('img', { src: f.dataUrl, class: 'li-thumb-img', onclick: (e) => { e.stopPropagation(); viewImage(f.dataUrl); } }))
     ) : null;
-    // 批量模式下的复选框（保证每条记录有id）
-    if (!r.id) r.id = '_r_' + Math.random().toString(36).slice(2,10);
+    // 批量模式下的复选框
     const cb = _batchMode ? (() => {
       const c = h('input', { type: 'checkbox', class: 'batch-cb' });
       c.checked = _batchSelected.has(r.id);

@@ -162,7 +162,10 @@
     },
 
     getRecords(key) {
-      return this.state.records[key] || [];
+      const arr = this.state.records[key] || [];
+      // 保证每条记录有唯一id
+      arr.forEach(r => { if (!r.id) r.id = genId(); });
+      return arr;
     },
 
     async addRecord(key, record) {
