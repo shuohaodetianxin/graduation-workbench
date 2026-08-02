@@ -199,8 +199,10 @@
       setSyncPanel('online', '云端已连接', '刚刚同步');
       if (mods.length) {
         toast('推送' + pushCount + '条 总计' + totalAll + '条 (' + mods.join(',') + ')', 'ok');
+      } else if (r.push._found && r.push._found.length) {
+        toast('找到记录但未推送: ' + r.push._found.join(','), 'err');
       } else {
-        toast('推送' + pushCount + '条 本地无记录', 'ok');
+        toast('推送0条 Storage无记录！检查数据是否保存', 'err');
       }
       try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
       Router.dispatch();

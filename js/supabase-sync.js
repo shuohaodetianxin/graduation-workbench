@@ -79,11 +79,13 @@
       if (!this.isConfigured()) return { ok: false, reason: 'not-configured' };
       this.syncing = true;
       const results = {};
+      const foundKeys = []; // 调试：记录找到了哪些模块
       try {
         for (const key in Storage.state.records) {
           const table = SYNC_TABLES[key];
           if (!table) continue;
           const arr = Storage.state.records[key] || [];
+          if (arr.length) foundKeys.push(key + '=' + arr.length);
           if (!arr.length) continue;
           const rows = arr.map(r => ({ id: r.id, data: r, updated_at: r.updatedAt }));
           const res = await fetch(this._restUrl() + '/' + table, {
@@ -100,7 +102,7 @@
           headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
           body: JSON.stringify(tagsRow),
         });
-        return { ok: true, results };
+        return { ok: true, results, _found: foundKeys };
       } catch (e) {
         return { ok: false, error: e.message };
       } finally {
