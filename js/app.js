@@ -184,11 +184,14 @@
       const ts = new Date().toISOString();
       localStorage.setItem(SYNC_TIME_KEY, ts);
       // 统计推送和拉取了多少条
-      let pushCount = 0, pullCount = 0;
+      let pushCount = 0, totalCount = 0;
       if (r.push.results) Object.values(r.push.results).forEach(v => { if (v.n) pushCount += v.n; });
+      // 统计当前模块的记录数
+      const cur = Router.current || 'home';
+      if (Storage.state.records[cur]) totalCount = Storage.state.records[cur].length;
       setSyncBadge('online', '已同步');
       setSyncPanel('online', '云端已连接', '刚刚同步');
-      toast('同步完成：推' + pushCount + '条 拉' + pullCount + '条', 'ok');
+      toast('同步完成：当前模块 ' + totalCount + ' 条记录', 'ok');
       try { window.dispatchEvent(new CustomEvent('storage-changed')); } catch (_) {}
       Router.dispatch();
     } else {
