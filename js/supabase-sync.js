@@ -87,7 +87,7 @@
           const arr = Storage.state.records[key] || [];
           if (arr.length) foundKeys.push(key + '=' + arr.length);
           if (!arr.length) continue;
-          // 逐条推送（DELETE旧+INSERT新=简单可靠的upsert）
+          // 逐条推送：先插入，冲突时用PATCH更新（不删，避免失败丢数据）
           let nOk = 0, lastErr = null;
           for (const r of arr) {
             const row = { 
@@ -95,20 +95,15 @@
               data: JSON.parse(JSON.stringify(r)),
               updated_at: r.updatedAt || new Date().toISOString() 
             };
-            // 先尝试直接插入
             let res = await fetch(this._restUrl() + '/' + table, {
               method: 'POST',
               headers: { ...this._headers(), 'Prefer': 'return=minimal' },
               body: JSON.stringify(row),
             });
-            // 如果id冲突，删掉旧的重插
+            // 如果id冲突（已有记录），用PATCH更新而非删插
             if (res.status === 409) {
-              await fetch(this._restUrl() + '/' + table + '?id=eq.' + encodeURIComponent(row.id), {
-                method: 'DELETE',
-                headers: this._headers(),
-              }).catch(() => {});
-              res = await fetch(this._restUrl() + '/' + table, {
-                method: 'POST',
+              res = await fetch(this._restUrl() + '/' + table + '?id=eq.' + encodeURIComponent(row.id), {
+                method: 'PATCH',
                 headers: { ...this._headers(), 'Prefer': 'return=minimal' },
                 body: JSON.stringify(row),
               });
