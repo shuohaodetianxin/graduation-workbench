@@ -25,6 +25,8 @@
   const SupabaseSync = {
     syncing: false,
     _autoTimer: null,
+    _pullTimer: null,
+    _lastPullCount: 0,
 
     _restUrl() {
       const s = Storage.getSettings();
@@ -74,7 +76,38 @@
       }, 3000);
     },
 
-    // ====== 全量推送 ======
+    // ====== 自动拉取（定期检查云端新数据）======
+    startAutoPull(intervalMs = 15000) {
+      if (!this.isConfigured()) return;
+      this.stopAutoPull();
+      this._pullTimer = setInterval(() => {
+        if (this.syncing || document.hidden) return;
+        this._doAutoPull();
+      }, intervalMs);
+      // 页面切回前台时立即拉一次
+      document.addEventListener('visibilitychange', this._onVisible);
+    },
+    stopAutoPull() {
+      if (this._pullTimer) { clearInterval(this._pullTimer); this._pullTimer = null; }
+      document.removeEventListener('visibilitychange', this._onVisible);
+    },
+    _onVisible() {
+      if (!document.hidden && SupabaseSync.isConfigured() && !SupabaseSync.syncing) {
+        SupabaseSync._doAutoPull();
+      }
+    },
+    async _doAutoPull() {
+      const before = {};
+      for (const k in Storage.state.records) { before[k] = (Storage.state.records[k]||[]).length; }
+      await this.pullAll();
+      // 检测是否有新数据
+      let changed = false;
+      for (const k in Storage.state.records) {
+        if ((Storage.state.records[k]||[]).length !== (before[k]||0)) changed = true;
+      }
+      if (changed && this.onDataChanged) this.onDataChanged();
+    },
+    onDataChanged: null,  // 外部设置的回调
     async pushAll() {
       if (!this.isConfigured()) return { ok: false, reason: 'not-configured' };
       this.syncing = true;
